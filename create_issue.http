@@ -1,0 +1,66 @@
+### Notice: Don't forget about API endpoints and Authorization: access token
+
+###=====================================================================================================================
+###                                                  GITHUB
+###=====================================================================================================================
+### Send POST request with json body
+### https://developer.github.com/v3/issues/#create-an-issue
+### GET /repos/:owner/:repo/issues/:number
+POST https://api.github.com/repos/iveronanomi/todo/issues
+Content-Type: application/json
+Accept: application/vnd.github.symmetra-preview+json
+Cache-Control: no-cache
+Authorization: {{GIT_ACCESS_TOKEN}}
+
+{"title":"test","body":"data","labels":[],"assignees":[]}
+
+
+###=====================================================================================================================
+###                                                  YOUTRACK
+###=====================================================================================================================
+
+### Youtrack v~3: get all issues
+### https://www.jetbrains.com/help/youtrack/standalone/api-issues.html
+### GET /api/issues?{fields}&{query}&{$skip}&{$top}
+GET {{YOUTRACK_ENDPOINT}}/api/issues
+Content-Type: application/json
+Cache-Control: no-cache
+Authorization: {{YOUTRACK_ACCESS_TOKEN}}
+
+### Youtrack v~3: create issue
+### https://www.jetbrains.com/help/youtrack/standalone/api-issues.html#post-issues
+### POST /api/issues[?fields=<fields>&<draftId>]
+POST {{YOUTRACK_ENDPOINT}}/api/issues?fields=reporter%28login,name%29,idReadable,id,project%28id,name,leader%28login,name%29%29,summary,description'
+Content-Type: application/json
+Cache-Control: no-cache
+Authorization: {{YOUTRACK_ACCESS_TOKEN}}
+
+{
+  "project": {"id":"SPFAC-0"},
+  "summary": "REST API lets you create issues!",
+  "description": "Let's create a new issue using YouTrack's REST API."
+}
+
+### Youtrack v~2: get all issues
+### https://www.jetbrains.com/help/youtrack/standalone/api-issues.html
+### GET /api/issues?{fields}&{query}&{$skip}&{$top}
+GET {{YOUTRACK_ENDPOINT}}/rest/project/issues
+Cache-Control: no-cache
+Authorization: {{YOUTRACK_ACCESS_TOKEN}}
+Connection: keep-alive
+
+### Youtrack v~2: Create issue
+### https://www.jetbrains.com/help/youtrack/standalone/Create-New-Issue.html
+### PUT /rest/issue?{project}&{summary}&{description}&{attachments}&{permittedGroup}
+PUT {{YOUTRACK_ENDPOINT}}/rest/issue?SPFAC&REST API lets you create issues!&Let's create a new issue using YouTrack's REST API.
+Cache-Control: no-cache
+Content-Type: application/json
+Authorization: {{YOUTRACK_ACCESS_TOKEN}}
+
+{
+  "project": {"id":"SPFAC-0"},
+  "summary": "REST API lets you create issues!",
+  "description": "Let's create a new issue using YouTrack's REST API."
+}
+
+
