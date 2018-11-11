@@ -1,6 +1,7 @@
 package todo
 
 import (
+	"bytes"
 	"errors"
 	"log"
 	"regexp"
@@ -61,7 +62,7 @@ func PreparePattern(pattern string) *regexp.Regexp {
 }
 
 // Extract entry fields from given string
-func Extract(from string) (*todo, bool, error) {
+func Extract(from string) (*fundamental, bool, error) {
 	if todoRegexp == nil {
 		return nil, false, errors.New("combine regexp mut be invoked before extraction")
 	}
@@ -78,7 +79,7 @@ func Extract(from string) (*todo, bool, error) {
 		return nil, false, nil
 	}
 
-	result := &todo{}
+	result := &fundamental{}
 	for i := range order {
 		switch order[i] {
 		case username:
@@ -95,7 +96,7 @@ func Extract(from string) (*todo, bool, error) {
 	return result, true, nil
 }
 
-type todo struct {
+type fundamental struct {
 	Username         string
 	ProjectName      string
 	IssueTitle       string
@@ -103,4 +104,27 @@ type todo struct {
 
 	File string
 	Line int
+
+	IssueURL    string
+	IssueNumber string
+
+	attempted bool
+}
+
+// String ...
+func (f fundamental) String() string {
+	buff := &bytes.Buffer{}
+	buff.WriteString("Username: ")
+	buff.WriteString(f.Username)
+	buff.WriteString("\n")
+	buff.WriteString("Project: ")
+	buff.WriteString(f.ProjectName)
+	buff.WriteString("\n")
+	buff.WriteString("Issue Title: ")
+	buff.WriteString(f.IssueTitle)
+	buff.WriteString("\n")
+	buff.WriteString("Issue Descriptions: ")
+	buff.WriteString(f.IssueDescription)
+
+	return buff.String()
 }

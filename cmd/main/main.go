@@ -4,7 +4,7 @@ import (
 	"bufio"
 	"bytes"
 	"flag"
-	"fmt"
+	"github.com/iveronanomi/toad/config"
 	"log"
 	"os"
 	"strings"
@@ -28,9 +28,10 @@ func init() {
 	flag.StringVar(&excludesFlag, "e", "", "Exclude `directories`; separate with [,]")
 	flag.StringVar(&typesFlag, "t", "", "Searching files `extensions`, separate with [,]")
 	flag.BoolVar(&verboseFlag, "v", false, "Verbose mode")
-	flag.StringVar(&formatFlag, "f", "//TODO({{username}});{{project}};{{issue_type}}", "TODO format string")
+	flag.StringVar(&formatFlag, "f", "//TODO({{username}}).{{project}} {{issue_type}}", "TODO format string")
 	flag.Parse()
 
+	log.SetFlags(log.Lshortfile)
 	if !verboseFlag {
 		log.SetOutput(&bytes.Buffer{})
 	}
@@ -41,26 +42,11 @@ func init() {
 	}
 }
 
-type fundamental struct {
-	todo string
-	line uint64
-	src  string
-	body string
-}
-
-var todoList []*fundamental
-
-func todoFromSource(src string, line uint64, format string) *fundamental {
-	return &fundamental{
-		src:  src,
-		line: line,
-		body: fmt.Sprintf("issue auto-generated from todo `%s`", src),
-	}
-}
-
 const chunkSize = 1024 //* 1024 * 1024
 
 func main() {
+	defer config.Save()
+
 	excludes = strings.Split(excludesFlag, ",")
 	paths = strings.Split(pathFlag, ",")
 	extensions = strings.Split(typesFlag, ",	")
@@ -72,19 +58,23 @@ func main() {
 	cr := tracker.New(tracker.GitCreator)
 	cr.SetAccessToken("")
 
-	url, err := tracker.Create("hello world", "body issue", "iveronanomi", "todo", cr)
+	_, err := config.Read()
 	if err != nil {
 		panic(err)
 	}
-	log.Print(url)
-
-	os.Exit(1)
 
 	chunks := make(chan []string)
 	col := todo.New(paths, excludes, extensions, chunkSize)
 	go col.Collect(chunks)
 	go read(chunks)
 	<-quit
+
+	for _, l := range list {
+		for _, f := range l {
+			f.Close()
+		}
+	}
+
 	log.Print("Find: ", found)
 }
 
@@ -105,11 +95,17 @@ func read(ch chan []string) {
 	}
 }
 
+var list map[string]map[int]*os.File
+
 func find(paths []string) {
 	for _, path := range paths {
 
 		f, err := os.Open(path)
-		defer f.Close()
+		defer func() {
+			if err != nil {
+				f.Close()
+			}
+		}()
 
 		if err != nil {
 			panic(err)
@@ -123,7 +119,7 @@ func find(paths []string) {
 		for scanner.Scan() {
 			line++
 			if strings.Contains(scanner.Text(), "//TODO") {
-				todoList = append(todoList, todoFromSource(path, uint64(line), ""))
+				list[path][line] = f
 			}
 		}
 
